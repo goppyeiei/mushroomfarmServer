@@ -15,8 +15,7 @@ app.config['MYSQL_DB'] = 'FARMS'
 mysql = MySQL(app)
 
 @app.route('/create/<string:user_id>') ######################################### talk to prof
-def create_farm(user_id,farm_id,):
-    print(user_id, farm_id)    
+def create_farm(user_id):  
     cur = mysql.connection.cursor() 
     cur.execute("INSERT INTO farm (user_id) VALUES (%s)", (user_id))
     mysql.connection.commit()
@@ -124,21 +123,21 @@ def check_contidion(user_id,farm_id,fan_status,fog_status):
     cur.close()
     return ""
 
-@app.route('/static/<string:farm_id>/<string:frequency>') 
-def static(farm_id,frequency):
-    frequency = str(frequency)
-    cur = mysql.connection.cursor()
-    tempdata = []
-    humiddata = []
-    timenow = datetime.datetime.now()
-    cur.execute(""" SELECT temp,humid FROM farm_details  """, (farm_id, timenow) )
-    raw_data = cur.fetchall()
-    for i in tempdata :
-        tempdata.append(raw_data[i][0])
-        humiddata.append(raw_data[i][1])
-    mysql.connection.commit()
-    cur.close() 
-    return "Sent!" 
+# @app.route('/static/<string:farm_id>/<string:frequency>') 
+# def static(farm_id,frequency):
+#     frequency = str(frequency)
+#     cur = mysql.connection.cursor()
+#     tempdata = []
+#     humiddata = []
+#     timenow = datetime.datetime.now()
+#     cur.execute(""" SELECT temp,humid FROM farm_details  """, (farm_id, timenow) )
+#     raw_data = cur.fetchall()
+#     for i in tempdata :
+#         tempdata.append(raw_data[i][0])
+#         humiddata.append(raw_data[i][1])
+#     mysql.connection.commit()
+#     cur.close() 
+#     return "Sent!" 
 
 if __name__ == "__main__":
     app.run(debug=True)
