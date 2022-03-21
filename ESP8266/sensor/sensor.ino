@@ -11,7 +11,7 @@ DHT dht(DHTPIN, DHTTYPE);
 
 const char* ssid = "12345";
 const char* password = "123456789";
-const int farm_id = 1;
+const int farm_id = 1019;
 
 void setup () {
 
@@ -36,7 +36,8 @@ void loop() {
   if (WiFi.status() == WL_CONNECTED) {
     WiFiClient client;
     HTTPClient http;
-    Serial.println(humid, temp);
+    Serial.println(humid);
+    Serial.println(temp);
     http.begin(client, "http://139.59.249.192/sent/" + String(farm_id) + "/" + String(temp) + "/" + String(humid) );
     http.GET();
     http.end();

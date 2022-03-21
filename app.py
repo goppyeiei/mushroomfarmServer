@@ -18,10 +18,19 @@ mysql = MySQL(app)
 def create_farm(user_id):  
     cur = mysql.connection.cursor() 
     cur.execute("INSERT INTO farm (user_id) VALUES (%s)", (user_id))
+    cur.execute(""" SELECT farm_id FROM farm WHERE user_id = %s ORDER BY farm_id DESC LIMIT 1 """, (user_id) )
+    data = cur.fetchall()
+    farm_id = data[0]
+    temp = 0
+    humid = 0
+    cur.execute("""INSERT INTO farm_details (farm_id,temp,humid) VALUES (%s, %s, %s)""", (farm_id, temp, humid))
+    cur.execute("""INSERT INTO farm_details (farm_id,temp,humid) VALUES (%s, %s, %s)""", (farm_id, temp, humid))
+    cur.execute("""INSERT INTO farm_details (farm_id,temp,humid) VALUES (%s, %s, %s)""", (farm_id, temp, humid))
+    cur.execute("""INSERT INTO farm_details (farm_id,temp,humid) VALUES (%s, %s, %s)""", (farm_id, temp, humid))
+    cur.execute("""INSERT INTO farm_details (farm_id,temp,humid) VALUES (%s, %s, %s)""", (farm_id, temp, humid))
     mysql.connection.commit()
     cur.close() 
     return "Registered!"
-
 @app.route('/register/<string:username>/<string:password>') #register
 def register(username,password,):
     cur = mysql.connection.cursor() 
@@ -34,15 +43,17 @@ def register(username,password,):
 def sent(farm_id,temp,humid):
     temp = float(temp)
     humid = int(humid)
-    farm_id = str(farm_id)
+    farm_id == str(farm_id)
+    print(farm_id)
     cur = mysql.connection.cursor()
-    cur.execute("""INSERT INTO farm_details (farm_id,temp,humid) VALUES (%s, %s, %s)""", (farm_id, temp, humid))
+    cur.execute("""INSERT INTO farm_details (farm_id,temp,humid) VALUES (%s, %s, %s)""", [farm_id, temp, humid])
     tempdata = []
     humiddata = []
     time = datetime.datetime.now()
-    cur.execute(""" SELECT temp,humid FROM farm_details WHERE farm_id = %s ORDER BY id DESC LIMIT 5 """, (farm_id) )
+    cur.execute(""" SELECT temp,humid FROM farm_details WHERE farm_id = %s ORDER BY id DESC LIMIT 5 """, [farm_id] )
     raw_data = cur.fetchall()
-    for i in range(5) :
+    print(raw_data)
+    for i in range(len(raw_data)) :
         tempdata.append(raw_data[i][0])
         humiddata.append(raw_data[i][1])
     tempdata = max(tempdata)
@@ -50,7 +61,7 @@ def sent(farm_id,temp,humid):
     cur.execute(""" UPDATE farm SET temp=%s, humid=%s, time=%s WHERE farm_id = %s """, (tempdata, humiddata, time, farm_id) )
     mysql.connection.commit()
     cur.close() 
-    return "Sent!" 
+    return "Sent!"  
 
 @app.route('/read/<string:user_id>') #มือถืออ่านข้อมูล
 def getdata(user_id):
@@ -123,21 +134,20 @@ def check_contidion(user_id,farm_id,fan_status,fog_status):
     cur.close()
     return ""
 
-# @app.route('/static/<string:farm_id>/<string:frequency>') 
-# def static(farm_id,frequency):
-#     frequency = str(frequency)
-#     cur = mysql.connection.cursor()
-#     tempdata = []
-#     humiddata = []
-#     timenow = datetime.datetime.now()
-#     cur.execute(""" SELECT temp,humid FROM farm_details  """, (farm_id, timenow) )
-#     raw_data = cur.fetchall()
-#     for i in tempdata :
-#         tempdata.append(raw_data[i][0])
-#         humiddata.append(raw_data[i][1])
-#     mysql.connection.commit()
-#     cur.close() 
-#     return "Sent!" 
+@app.route('/statistic/<string:farm_id>') 
+def statistic(farm_id):
+    tempdata = []
+    humiddata = []
+    cur = mysql.connection.cursor()
+    cur.execute(""" SELECT temp,humid FROM farm_details WHERE farm_id = %s ORDER BY id DESC LIMIT 1 """, (farm_id) )
+    raw_data = cur.fetchall()
+    tempdata.append(raw_data[0][0])
+    humiddata.append(raw_data[0][1])
+    time = datetime.datetime.now()
+    cur.execute("""INSERT INTO statistic (farm_id,temp,humid,time) VALUES (%s, %s, %s, %s)""", (farm_id, tempdata, humiddata, time))
+    mysql.connection.commit()
+    cur.close() 
+    return "Sent!" 
 
 if __name__ == "__main__":
     app.run(debug=True)

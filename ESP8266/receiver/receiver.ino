@@ -7,12 +7,14 @@
 
 const char* ssid = "12345";
 const char* password = "123456789";
-int user_id = 1;
-int farm_id = 1;
+int user_id = 5;
+int farm_id = 1019;
 int fan = 27;
 int fog = 26;
 String fan_status;
 String fog_status;
+uint32_t notConnectedCounter = 0;
+unsigned long lastMillis;
 
 void setup () {
 
@@ -21,8 +23,12 @@ void setup () {
 
   while (WiFi.status() != WL_CONNECTED) {
 
-    delay(1000);
-    Serial.print("Connecting..");
+    delay(100);
+    notConnectedCounter++;
+    if(notConnectedCounter > 150) { // Reset board if not connected after 5s
+        Serial.println("Resetting due to Wifi not connecting...");
+        ESP.restart();
+    }
   }
 
   Serial.println("Connected");
@@ -33,7 +39,12 @@ void setup () {
 }
 
 void loop() {
-
+  if (millis() - lastMillis >= 3600000) 
+  {
+   lastMillis = millis();  
+   statistic();
+  }
+  
   if (WiFi.status() == WL_CONNECTED) {
     WiFiClient client;
     HTTPClient http;
@@ -43,9 +54,7 @@ void loop() {
     String iot_status = http.getString();
     http.end();
     fan_status = iot_status[0];
-    fog_status = iot_status[3];
-    Serial.println("http://139.59.249.192/check-condition/"+ String(user_id) + "/" + String(farm_id) + "/" + String(fan_status) + "/" + String(fog_status));
-    
+    fog_status = iot_status[3]; 
     http.begin(client, "http://139.59.249.192/check-condition/"+ String(user_id) + "/" + String(farm_id) + "/" + String(fan_status) + "/" + String(fog_status) );
     http.GET();
     http.end();
@@ -69,4 +78,13 @@ void loop() {
   }
 
   
+}
+
+void statistic(){
+    WiFiClient client;
+    HTTPClient http;
+    http.begin(client, "http://139.59.249.192/statistic/" + String(farm_id) );
+    http.GET();
+    http.end();
+    Serial.println("Statistic");
 }
