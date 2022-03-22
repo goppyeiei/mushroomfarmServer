@@ -1,7 +1,10 @@
 from curses import raw
+from unittest import result
 from flask import Flask, jsonify
 from flask_mysqldb import MySQL
 from flask_cors import CORS, cross_origin
+from cryptography.fernet import Fernet
+import rsa
 import json
 import datetime
 import re
@@ -13,8 +16,9 @@ app.config['MYSQL_USER'] = 'farmer'
 app.config['MYSQL_PASSWORD'] = '9517538426Gp'
 app.config['MYSQL_DB'] = 'FARMS'
 mysql = MySQL(app)
+publicKey, privateKey = rsa.newkeys(64)
 
-@app.route('/create/<string:user_id>') ######################################### talk to prof
+@app.route('/create/<string:user_id>')
 def create_farm(user_id):  
     cur = mysql.connection.cursor() 
     cur.execute("INSERT INTO farm (user_id) VALUES (%s)", (user_id))
@@ -30,15 +34,40 @@ def create_farm(user_id):
     cur.execute("""INSERT INTO farm_details (farm_id,temp,humid) VALUES (%s, %s, %s)""", (farm_id, temp, humid))
     mysql.connection.commit()
     cur.close() 
-    return "Registered!"
-@app.route('/register/<string:username>/<string:password>') #register
-def register(username,password,):
-    cur = mysql.connection.cursor() 
-    cur.execute("INSERT INTO users (username,password) VALUES (%s, %s)", (username, password))
-    mysql.connection.commit()
-    cur.close() 
     return "Created!"
 
+@app.route('/register/<string:username>/<string:password>') #register
+def register(username,password,):
+    key = Fernet.generate_key()
+    fernet = Fernet(key)
+    password = fernet.encrypt(password.encode())
+    cur = mysql.connection.cursor() 
+    cur.execute("""INSERT INTO users (username,password) VALUES (%s, %s)""", [username, password])
+    mysql.connection.commit()
+    cur.close()
+    return "Registered"
+
+@app.route('/login/<string:username>/<string:password>') #login
+def login(username,password,):
+    key = Fernet.generate_key()
+    fernet = Fernet(key)
+    cur = mysql.connection.cursor() 
+    cur.execute(""" SELECT user_id,username,password FROM users WHERE username = %s  """, [username] )
+    data = cur.fetchall()
+    encPassword = data[0][2]
+    encPassword = encPassword.encode()
+    # decPassword = fernet.decrypt(encPassword).decode()
+    mysql.connection.commit()
+    cur.close() 
+    print(password)
+    print(encPassword)
+    # if decPassword == password :
+    #     result = 'yes'
+    # else :
+    #     result = 'no'
+    return "GG"
+
+    
 @app.route('/sent/<string:farm_id>/<string:temp>/<string:humid>') #บอร์ดส่งข้อมูลมา #serverจัดการข้อมูล
 def sent(farm_id,temp,humid):
     temp = float(temp)
@@ -139,8 +168,9 @@ def statistic(farm_id):
     tempdata = []
     humiddata = []
     cur = mysql.connection.cursor()
-    cur.execute(""" SELECT temp,humid FROM farm_details WHERE farm_id = %s ORDER BY id DESC LIMIT 1 """, (farm_id) )
+    cur.execute(""" SELECT temp,humid FROM farm_details WHERE farm_id = %s ORDER BY id DESC LIMIT 1 """, [farm_id] )
     raw_data = cur.fetchall()
+    print(raw_data)
     tempdata.append(raw_data[0][0])
     humiddata.append(raw_data[0][1])
     time = datetime.datetime.now()

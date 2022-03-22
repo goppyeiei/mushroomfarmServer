@@ -12,7 +12,7 @@ DHT dht(DHTPIN, DHTTYPE);
 const char* ssid = "12345";
 const char* password = "123456789";
 const int farm_id = 1019;
-
+uint32_t notConnectedCounter = 0;
 void setup () {
 
   Serial.begin(115200);
@@ -20,8 +20,12 @@ void setup () {
 
   while (WiFi.status() != WL_CONNECTED) {
 
-    delay(1000);
-    Serial.print("Connecting..");
+    delay(100);
+    notConnectedCounter++;
+    if(notConnectedCounter > 150) { // Reset board if not connected after 5s
+        Serial.println("Resetting due to Wifi not connecting...");
+        ESP.restart();
+    }
   }
 
   Serial.println("Connected");
@@ -45,5 +49,8 @@ void loop() {
 
 
     delay(5000);
+  } else {
+    Serial.println("restart");
+    ESP.restart();
   }
 }

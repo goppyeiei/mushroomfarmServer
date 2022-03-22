@@ -44,6 +44,9 @@ void loop() {
    lastMillis = millis();  
    statistic();
   }
+  if (millis() >= 86400000){
+    ESP.restart();
+  }
   
   if (WiFi.status() == WL_CONNECTED) {
     WiFiClient client;
@@ -59,6 +62,9 @@ void loop() {
     http.GET();
     http.end();
     delay(1000);
+  } else {
+    Serial.println("restart");
+    ESP.restart();
   };
 
   if (fan_status == "1") {
