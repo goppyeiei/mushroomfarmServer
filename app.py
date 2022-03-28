@@ -115,18 +115,6 @@ def get_one_farm(farm_id):
         ,"fog_status":cur[7],"Automate":cur[8],"fix_temp":cur[9],"fix_humid":cur[10]})
     return jsonify(data)
 
-@app.route('/test/farm/<string:farm_id>') #มือถืออ่านข้อมูลแต่ละหน้า
-def test(farm_id):
-    data = []
-    cur = mysql.connection.cursor()
-    cur.execute("SELECT * FROM farm WHERE farm_id = %s", [farm_id])
-    raw_data = cur.fetchall()
-    cur.close()
-    for cur in raw_data:
-        data.append({"user_id":cur[0],"farm_id":cur[1],"farm_name":cur[2],"temp":cur[3],"humid":cur[4],"time":str(cur[5]),"fan_status":cur[6]
-        ,"fog_status":cur[7],"Automate":cur[8],"fix_temp":cur[9],"fix_humid":cur[10]})
-    return jsonify(data)
-
 @app.route('/change-option/<string:farm_id>/<string:Automate>/<string:fix_temp>/<string:fix_humid>/<string:fan_status>/<string:fog_status>') #ตั้งค่าต่างๆฟาร์ม from Mobile
 def change_option(farm_id,Automate,fix_temp,fix_humid,fan_status,fog_status):
     cur = mysql.connection.cursor()
