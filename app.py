@@ -1,3 +1,4 @@
+from curses import raw
 from flask import Flask, jsonify
 from flask_mysqldb import MySQL
 from flask_cors import CORS
@@ -101,8 +102,21 @@ def get_all_farm(user_id):
         ,"fog_status":cur[7],"Automate":cur[8],"fix_temp":cur[9],"fix_humid":cur[10]})
     return jsonify(data)
 
+
 @app.route('/read/farm/<string:farm_id>') #มือถืออ่านข้อมูลแต่ละหน้า
 def get_one_farm(farm_id):
+    data = []
+    cur = mysql.connection.cursor()
+    cur.execute("SELECT * FROM farm WHERE farm_id = %s", [farm_id])
+    raw_data = cur.fetchall()
+    cur.close()
+    for cur in raw_data:
+        data.append({"user_id":cur[0],"farm_id":cur[1],"farm_name":cur[2],"temp":cur[3],"humid":cur[4],"time":str(cur[5]),"fan_status":cur[6]
+        ,"fog_status":cur[7],"Automate":cur[8],"fix_temp":cur[9],"fix_humid":cur[10]})
+    return jsonify(data)
+
+@app.route('/test/farm/<string:farm_id>') #มือถืออ่านข้อมูลแต่ละหน้า
+def test(farm_id):
     data = []
     cur = mysql.connection.cursor()
     cur.execute("SELECT * FROM farm WHERE farm_id = %s", [farm_id])
