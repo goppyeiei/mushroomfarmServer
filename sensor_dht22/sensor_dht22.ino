@@ -1,3 +1,6 @@
+#include <DHT.h>
+#include <DHT_U.h>
+
 #include <dummy.h>
 
 #include <WiFi.h>
@@ -5,13 +8,13 @@
 #include <HTTPClient.h>
 
 #define DHTPIN 27     // what digital pin we're connected to
-#define DHTTYPE DHT11
+#define DHTTYPE DHT22
 
 DHT dht(DHTPIN, DHTTYPE);
 
 const char* ssid = "Goppy";
 const char* password = "123456789";
-const int farm_id = 1019;
+const int farm_id = 1020;
 uint32_t notConnectedCounter = 0;
 void setup () {
 

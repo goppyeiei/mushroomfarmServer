@@ -5,9 +5,9 @@
 #include <WiFi.h>
 #include <HTTPClient.h>
 
-const char* ssid = "12345";
+const char* ssid = "Goppy";
 const char* password = "123456789";
-int user_id = 5;
+int user_id = 12;
 int farm_id = 1019;
 int fan = 27;
 int fog = 26;
@@ -52,18 +52,19 @@ void loop() {
     WiFiClient client;
     HTTPClient http;
 
-    http.begin(client, "http://139.59.249.192/check-iot/"+ String(user_id) + "/" + String(farm_id) );
+    http.begin(client, "http://139.59.249.192/check-iot/" + String(farm_id) );
     int dataa = http.GET();
     String iot_status = http.getString();
+    Serial.println(iot_status);
     http.end();
     fan_status = iot_status[0];
     fog_status = iot_status[3]; 
-    http.begin(client, "http://139.59.249.192/check-condition/"+ String(user_id) + "/" + String(farm_id) + "/" + String(fan_status) + "/" + String(fog_status) );
+    http.begin(client, "http://139.59.249.192/check-condition/" + String(farm_id) + "/" + String(fan_status) + "/" + String(fog_status) );
     http.GET();
     http.end();
     delay(1000);
   } else {
-    Serial.println("restart");
+    Serial.println("Resetting due to Wifi not connecting...");
     ESP.restart();
   };
 
