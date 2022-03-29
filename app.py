@@ -1,12 +1,10 @@
-from curses import raw
+from tkinter import Y
 from flask import Flask, jsonify
 from flask_mysqldb import MySQL
 from flask_cors import CORS
 from flask_bcrypt import Bcrypt
 import datetime
 import re
-
-
 
 app = Flask(__name__)
 cors = CORS(app)
@@ -16,7 +14,6 @@ app.config['MYSQL_PASSWORD'] = '9517538426Gp'
 app.config['MYSQL_DB'] = 'FARMS'
 mysql = MySQL(app)
 bcrypt = Bcrypt(app)
-
 
 @app.route('/create/<string:user_id>/<string:farm_name>')
 def create_farm(user_id,farm_name):  
@@ -38,10 +35,17 @@ def create_farm(user_id,farm_name):
 def register(username,password,):
     password = bcrypt.generate_password_hash(password)
     cur = mysql.connection.cursor() 
-    cur.execute("""INSERT INTO users (username,password) VALUES (%s, %s)""", [username, password])
-    mysql.connection.commit()
-    cur.close()
-    return "Registered"
+    cur.execute(""" SELECT username FROM users WHERE username = %s """, [username])
+    users_name = cur.fetchall()
+    if len(users_name) < 1:
+        cur.execute("""INSERT INTO users (username,password) VALUES (%s, %s)""", [username, password])
+        mysql.connection.commit()
+        cur.close()
+        return "Registered"
+    else :
+        mysql.connection.commit()
+        cur.close()
+        return "Username already exists"
 
 @app.route('/login/<string:username>/<string:password>') #login
 def login(username,password,):
@@ -64,8 +68,6 @@ def login(username,password,):
     mysql.connection.commit()
     cur.close() 
     return jsonify(user_data)
-
-    
 
 @app.route('/sent/<string:farm_id>/<string:temp>/<string:humid>') #บอร์ดส่งข้อมูลมา #serverจัดการข้อมูล
 def sent(farm_id,temp,humid):
@@ -133,7 +135,7 @@ def check_iot(farm_id):
     return str(raw_data)
 
 @app.route('/check-condition/<string:farm_id>/<string:fan_status>/<string:fog_status>') #เปลี่ยนสภาวะ
-def check_contidion(farm_id,fan_status,fog_status): 
+def check_condition(farm_id,fan_status,fog_status): 
     cur = mysql.connection.cursor()
     cur.execute("SELECT temp,humid,fix_temp,fix_humid,Automate,fan_status,fog_status FROM farm WHERE farm_id = %s", (farm_id,))
     raw_data = cur.fetchall()
@@ -173,10 +175,27 @@ def statistic(farm_id):
     tempdata.append(raw_data[0][0])
     humiddata.append(raw_data[0][1])
     time = datetime.datetime.now()
-    cur.execute("""INSERT INTO statistic (farm_id,temp,humid,time) VALUES (%s, %s, %s, %s)""", (farm_id, tempdata, humiddata, time))
+    time_hr = (time.replace(second=0, microsecond=0, minute=0, hour=time.hour)+datetime.timedelta(hours=time.minute//30))
+    cur.execute("""INSERT INTO statistic (farm_id,temp,humid,time) VALUES (%s, %s, %s, %s)""", (farm_id, tempdata, humiddata, time_hr))
     mysql.connection.commit()
     cur.close() 
     return "Sent!" 
+
+@app.route('/statistic/<string:farm_id>/<string:time>') 
+def statistic_farm(farm_id,time):
+    data_time = time.split("-")
+    time = datetime.datetime( int(data_time[0]),int(data_time[1]),int(data_time[2]) )
+    oneday = time + datetime.timedelta(days=1)
+    data = []
+    cur = mysql.connection.cursor()
+    cur.execute(""" SELECT * FROM statistic WHERE farm_id = %s and time > %s and time < %s """, [farm_id,time,oneday] )
+    raw_data = cur.fetchall()
+    cur.close()
+    for cur in raw_data:
+        time = cur[4].strftime("%H:%M")
+        data.append({"id":cur[0],"farm_id":cur[1],"temp":cur[2],"humid":cur[3],"time":time})
+    return jsonify(data)
+
 
 if __name__ == "__main__":
     app.run(debug=True)
