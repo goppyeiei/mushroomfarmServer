@@ -14,7 +14,7 @@ DHT dht(DHTPIN, DHTTYPE);
 
 const char* ssid = "Goppy";
 const char* password = "123456789";
-const int farm_id = 1020;
+const int farm_id = 1019;
 uint32_t notConnectedCounter = 0;
 void setup () {
 

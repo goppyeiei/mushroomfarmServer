@@ -1,3 +1,4 @@
+from audioop import avg
 from tkinter import Y
 from flask import Flask, jsonify
 from flask_mysqldb import MySQL
@@ -85,8 +86,11 @@ def sent(farm_id,temp,humid):
     for i in range(len(raw_data)) :
         tempdata.append(raw_data[i][0])
         humiddata.append(raw_data[i][1])
-    tempdata = max(tempdata)
-    humiddata = max(humiddata)
+    def Average(i):
+        avg = sum(i) / len(i)
+        return avg
+    tempdata = Average(tempdata)
+    humiddata = Average(humiddata)
     cur.execute(""" UPDATE farm SET temp=%s, humid=%s, time=%s WHERE farm_id = %s """, (tempdata, humiddata, time_now, farm_id) )
     mysql.connection.commit()
     cur.close() 
@@ -145,16 +149,20 @@ def check_condition(farm_id,fan_status,fog_status):
     fix_humid = raw_data[0][3]
     Automate = raw_data[0][4]
     fan_status = raw_data[0][5]
-    fog_status = raw_data[0][6]
-    if Automate == 1 :
-        if temp > fix_temp :
-            fan_status = 1
-        else :
+    fog_status = raw_data[0][6]  
+
+    if Automate == 1 : 
+
+        if temp >= fix_temp : 
+            fan_status = 1 
+        elif temp <= fix_temp - 1 :  
             fan_status = 0
-        if humid < fix_humid : 
+#-------------------------------------------------#
+        if humid <= fix_humid :
             fog_status = 1
-        else :
+        elif humid >= fix_humid + 10 :
             fog_status = 0
+
     elif Automate == 0 :
         fog_status = fog_status
         fan_status = fan_status
@@ -170,13 +178,23 @@ def statistic(farm_id):
     tempdata = []
     humiddata = []
     cur = mysql.connection.cursor()
-    cur.execute(""" SELECT temp,humid FROM farm_details WHERE farm_id = %s ORDER BY id DESC LIMIT 1 """, [farm_id] )
+    time_now = datetime.datetime.now()
+    time_hr = (time_now.replace(second=0, microsecond=0, minute=0, hour=time_now.hour)+datetime.timedelta(hours=time_now.minute//30))
+    time = time_now - datetime.timedelta(hours=1)
+    cur.execute(""" SELECT temp,humid FROM farm_details WHERE farm_id = %s and datetime > %s ORDER BY id DESC """, [farm_id, time] )
     raw_data = cur.fetchall()
-    tempdata.append(raw_data[0][0])
-    humiddata.append(raw_data[0][1])
-    time = datetime.datetime.now()
-    time_hr = (time.replace(second=0, microsecond=0, minute=0, hour=time.hour)+datetime.timedelta(hours=time.minute//30))
+    for i in range(len(raw_data)) :
+        tempdata.append(raw_data[i][0])
+        humiddata.append(raw_data[i][1])
+    def Average(i):
+        avg = sum(i) / len(i)
+        return avg
+    tempdata = Average(tempdata)
+    humiddata = Average(humiddata)
+    tempdata = round(tempdata,2)
+    humiddata = round(humiddata,2)
     cur.execute("""INSERT INTO statistic (farm_id,temp,humid,time) VALUES (%s, %s, %s, %s)""", (farm_id, tempdata, humiddata, time_hr))
+    cur.execute("""DELETE FROM farm_details WHERE farm_id = %s and datetime < %s""", (farm_id, time))
     mysql.connection.commit()
     cur.close() 
     return "Sent!" 
