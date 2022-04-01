@@ -202,11 +202,11 @@ def statistic(farm_id):
 @app.route('/statistic/<string:farm_id>/<string:time>') 
 def statistic_farm(farm_id,time):
     data_time = time.split("-")
-    time = datetime.datetime( int(data_time[0]),int(data_time[1]),int(data_time[2]) )
-    oneday = time + datetime.timedelta(days=1)
+    time = datetime.datetime( int(data_time[0]),int(data_time[1]),int(data_time[2]) ) 
+    oneday = time + datetime.timedelta(days=1) 
     data = []
     cur = mysql.connection.cursor()
-    cur.execute(""" SELECT * FROM statistic WHERE farm_id = %s and time > %s and time < %s """, [farm_id,time,oneday] )
+    cur.execute(""" SELECT * FROM statistic WHERE farm_id = %s and time >= %s and time < %s """, [farm_id,time,oneday] )
     raw_data = cur.fetchall()
     cur.close()
     for cur in raw_data:
