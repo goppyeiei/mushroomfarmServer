@@ -1,5 +1,3 @@
-from audioop import avg
-from tkinter import Y
 from flask import Flask, jsonify
 from flask_mysqldb import MySQL
 from flask_cors import CORS
@@ -89,8 +87,8 @@ def sent(farm_id,temp,humid):
     def Average(i):
         avg = sum(i) / len(i)
         return avg
-    tempdata = Average(tempdata)
-    humiddata = Average(humiddata)
+    tempdata = round(Average(tempdata),2)
+    humiddata = round(Average(humiddata),2)
     cur.execute(""" UPDATE farm SET temp=%s, humid=%s, time=%s WHERE farm_id = %s """, (tempdata, humiddata, time_now, farm_id) )
     mysql.connection.commit()
     cur.close() 
@@ -136,6 +134,7 @@ def check_iot(farm_id):
     raw_data = cur.fetchall()
     cur.close()
     raw_data = re.subn('[(())]','',str(raw_data))[0]
+    print("raw_data",raw_data)
     return str(raw_data)
 
 @app.route('/check-condition/<string:farm_id>/<string:fan_status>/<string:fog_status>') #เปลี่ยนสภาวะ
@@ -213,6 +212,11 @@ def statistic_farm(farm_id,time):
         time = cur[4].strftime("%H:%M")
         data.append({"id":cur[0],"farm_id":cur[1],"temp":cur[2],"humid":cur[3],"time":time})
     return jsonify(data)
+
+@app.route('/test') 
+def test():
+    time = datetime.datetime.now()
+    return "GG"
 
 
 if __name__ == "__main__":
