@@ -3,7 +3,6 @@ from flask_mysqldb import MySQL
 from flask_cors import CORS
 from flask_bcrypt import Bcrypt
 import datetime
-import re
 
 app = Flask(__name__)
 cors = CORS(app)
@@ -106,7 +105,6 @@ def get_all_farm(user_id):
         ,"fog_status":cur[7],"Automate":cur[8],"fix_temp":cur[9],"fix_humid":cur[10]})
     return jsonify(data)
 
-
 @app.route('/read/farm/<string:farm_id>') #มือถืออ่านข้อมูลแต่ละหน้า
 def get_one_farm(farm_id):
     data = []
@@ -127,18 +125,8 @@ def change_option(farm_id,Automate,fix_temp,fix_humid,fan_status,fog_status):
     cur.close()
     return "Success!" 
 
-@app.route('/check-iot/<string:farm_id>') #เช็คสถานะiot
-def check_iot(farm_id): 
-    cur = mysql.connection.cursor()
-    cur.execute("SELECT fan_status,fog_status FROM farm WHERE farm_id = %s", (farm_id,))
-    raw_data = cur.fetchall()
-    cur.close()
-    raw_data = re.subn('[(())]','',str(raw_data))[0]
-    print("raw_data",raw_data)
-    return str(raw_data)
-
-@app.route('/check-condition/<string:farm_id>/<string:fan_status>/<string:fog_status>') #เปลี่ยนสภาวะ
-def check_condition(farm_id,fan_status,fog_status): 
+@app.route('/check-condition/<string:farm_id>') #เปลี่ยนสภาวะ
+def check_condition(farm_id): 
     cur = mysql.connection.cursor()
     cur.execute("SELECT temp,humid,fix_temp,fix_humid,Automate,fan_status,fog_status FROM farm WHERE farm_id = %s", (farm_id,))
     raw_data = cur.fetchall()
@@ -151,7 +139,6 @@ def check_condition(farm_id,fan_status,fog_status):
     fog_status = raw_data[0][6]  
 
     if Automate == 1 : 
-
         if temp >= fix_temp : 
             fan_status = 1 
         elif temp <= fix_temp - 1 :  
@@ -167,10 +154,12 @@ def check_condition(farm_id,fan_status,fog_status):
         fan_status = fan_status
     else :
         return ("Error")
+
     cur.execute(""" UPDATE farm SET fan_status = %s, fog_status = %s WHERE farm_id = %s """, (fan_status,fog_status,farm_id,) )
     mysql.connection.commit()
     cur.close()
-    return ""
+    raw_data = (fan_status,fog_status)
+    return str(raw_data)
 
 @app.route('/statistic/<string:farm_id>') 
 def statistic(farm_id):
@@ -217,7 +206,6 @@ def statistic_farm(farm_id,time):
 def test():
     time = datetime.datetime.now()
     return "GG"
-
 
 if __name__ == "__main__":
     app.run(debug=True)
