@@ -16,15 +16,7 @@ bcrypt = Bcrypt(app)
 @app.route('/create/<string:user_id>/<string:farm_name>')
 def create_farm(user_id,farm_name):  
     cur = mysql.connection.cursor() 
-    cur.execute("INSERT INTO farm (user_id) VALUES (%s)", [user_id])
-    cur.execute(""" SELECT farm_id FROM farm WHERE user_id = %s ORDER BY farm_id DESC LIMIT 1 """, [user_id] )
-    data = cur.fetchall()
-    farm_id = data[0]
-    temp = 0
-    humid = 0
-    cur.execute(""" UPDATE farm SET farm_name=%s WHERE farm_id = %s """, (farm_name, farm_id) )
-    for i in range(5) :
-        cur.execute("""INSERT INTO farm_details (farm_id,temp,humid) VALUES (%s, %s, %s)""", (farm_id, temp, humid))
+    cur.execute("INSERT INTO farm (user_id,farm_name) VALUES (%s, %s)", [user_id,farm_name])
     mysql.connection.commit()
     cur.close() 
     return "Created!"
