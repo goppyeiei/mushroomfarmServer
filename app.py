@@ -13,6 +13,8 @@ app.config['MYSQL_DB'] = 'FARMS'
 mysql = MySQL(app)
 bcrypt = Bcrypt(app)
 
+
+
 @app.after_request
 def add_header(r):
     r.headers["Cache-Control"] = "no-cache, no-store, must-revalidate"
@@ -69,29 +71,32 @@ def login(username,password,):
 
 @app.route('/sent/<string:farm_id>/<string:temp>/<string:humid>') #???????????????? #server????????????
 def sent(farm_id,temp,humid):
-    temp = float(temp)
-    humid = int(humid)
-    farm_id == str(farm_id)
-    cur = mysql.connection.cursor()
-    cur.execute("""INSERT INTO farm_details (farm_id,temp,humid) VALUES (%s, %s, %s)""", [farm_id, temp, humid])
-    tempdata = []
-    humiddata = []
-    time_now = datetime.datetime.now()
-    time = time_now - datetime.timedelta(seconds=10)
-    cur.execute(""" SELECT temp,humid FROM farm_details WHERE farm_id = %s and datetime > %s ORDER BY id DESC """, [farm_id, time] )
-    raw_data = cur.fetchall()
-    for i in range(len(raw_data)) :
-        tempdata.append(raw_data[i][0])
-        humiddata.append(raw_data[i][1])
-    def Average(i):
-        avg = sum(i) / len(i)
-        return avg
-    tempdata = round(Average(tempdata),2)
-    humiddata = round(Average(humiddata),2)
-    cur.execute(""" UPDATE farm SET temp=%s, humid=%s, time=%s WHERE farm_id = %s """, (tempdata, humiddata, time_now, farm_id) )
-    mysql.connection.commit()
-    cur.close() 
-    return "Sent!"  
+    if temp != 'nan':
+        temp = float(temp)
+        humid = int(humid)
+        farm_id == str(farm_id)
+        cur = mysql.connection.cursor()
+        cur.execute("""INSERT INTO farm_details (farm_id,temp,humid) VALUES (%s, %s, %s)""", [farm_id, temp, humid])
+        tempdata = []
+        humiddata = []
+        time_now = datetime.datetime.now()
+        time = time_now - datetime.timedelta(seconds=10)
+        cur.execute(""" SELECT temp,humid FROM farm_details WHERE farm_id = %s and datetime > %s ORDER BY id DESC """, [farm_id, time] )
+        raw_data = cur.fetchall()
+        for i in range(len(raw_data)) :
+            tempdata.append(raw_data[i][0])
+            humiddata.append(raw_data[i][1])
+        def Average(i):
+            avg = sum(i) / len(i)
+            return avg
+        tempdata = round(Average(tempdata),2)
+        humiddata = round(Average(humiddata),2)
+        cur.execute(""" UPDATE farm SET temp=%s, humid=%s, time=%s WHERE farm_id = %s """, (tempdata, humiddata, time_now, farm_id) )
+        mysql.connection.commit()
+        cur.close() 
+        return "Sent!"  
+    else :
+        return ("NAN")
 
 @app.route('/read/<string:user_id>') #????????????????
 def get_all_farm(user_id):
