@@ -13,6 +13,14 @@ app.config['MYSQL_DB'] = 'FARMS'
 mysql = MySQL(app)
 bcrypt = Bcrypt(app)
 
+@app.after_request
+def add_header(r):
+    r.headers["Cache-Control"] = "no-cache, no-store, must-revalidate"
+    r.headers["Pragma"] = "no-cache"
+    r.headers["Expires"] = "0"
+    r.headers['Cache-Control'] = 'public, max-age=0'
+    return r
+
 @app.route('/create/<string:user_id>/<string:farm_name>')
 def create_farm(user_id,farm_name):  
     cur = mysql.connection.cursor() 
@@ -59,7 +67,7 @@ def login(username,password,):
     cur.close() 
     return jsonify(user_data)
 
-@app.route('/sent/<string:farm_id>/<string:temp>/<string:humid>') #บอร์ดส่งข้อมูลมา #serverจัดการข้อมูล
+@app.route('/sent/<string:farm_id>/<string:temp>/<string:humid>') #???????????????? #server????????????
 def sent(farm_id,temp,humid):
     temp = float(temp)
     humid = int(humid)
@@ -85,7 +93,7 @@ def sent(farm_id,temp,humid):
     cur.close() 
     return "Sent!"  
 
-@app.route('/read/<string:user_id>') #มือถืออ่านข้อมูล
+@app.route('/read/<string:user_id>') #????????????????
 def get_all_farm(user_id):
     data = []
     cur = mysql.connection.cursor()
@@ -97,7 +105,7 @@ def get_all_farm(user_id):
         ,"fog_status":cur[7],"Automate":cur[8],"fix_temp":cur[9],"fix_humid":cur[10]})
     return jsonify(data)
 
-@app.route('/read/farm/<string:farm_id>') #มือถืออ่านข้อมูลแต่ละหน้า
+@app.route('/read/farm/<string:farm_id>') #?????????????????????????
 def get_one_farm(farm_id):
     data = []
     cur = mysql.connection.cursor()
@@ -109,7 +117,7 @@ def get_one_farm(farm_id):
         ,"fog_status":cur[7],"Automate":cur[8],"fix_temp":cur[9],"fix_humid":cur[10]})
     return jsonify(data)
 
-@app.route('/change-option/<string:farm_id>/<string:Automate>/<string:fix_temp>/<string:fix_humid>/<string:fan_status>/<string:fog_status>') #ตั้งค่าต่างๆฟาร์ม from Mobile
+@app.route('/change-option/<string:farm_id>/<string:Automate>/<string:fix_temp>/<string:fix_humid>/<string:fan_status>/<string:fog_status>') #????????????????? from Mobile
 def change_option(farm_id,Automate,fix_temp,fix_humid,fan_status,fog_status):
     cur = mysql.connection.cursor()
     cur.execute(""" UPDATE farm SET Automate=%s,fix_temp = %s,fix_humid = %s,fan_status = %s,fog_status = %s WHERE farm_id = %s """, (Automate,fix_temp,fix_humid,fan_status,fog_status, farm_id) )
@@ -117,7 +125,7 @@ def change_option(farm_id,Automate,fix_temp,fix_humid,fan_status,fog_status):
     cur.close()
     return "Success!" 
 
-@app.route('/check-condition/<string:farm_id>') #เปลี่ยนสภาวะ
+@app.route('/check-condition/<string:farm_id>') #????????????
 def check_condition(farm_id): 
     cur = mysql.connection.cursor()
     cur.execute("SELECT temp,humid,fix_temp,fix_humid,Automate,fan_status,fog_status FROM farm WHERE farm_id = %s", (farm_id,))
@@ -196,8 +204,15 @@ def statistic_farm(farm_id,time):
 
 @app.route('/test') 
 def test():
-    time = datetime.datetime.now()
-    return "GG"
+    cur = mysql.connection.cursor()
+    cur.execute(""" SELECT testtest FROM test ORDER BY testtest DESC LIMIT 1""")
+    data = cur.fetchall()
+    numm = data[0][0]
+    numtest = numm + 1
+    cur.execute("""INSERT INTO test (testtest) VALUES (%s)""", [numtest])
+    mysql.connection.commit()
+    cur.close()
+    return str(data)
 
 if __name__ == "__main__":
     app.run(debug=True)
