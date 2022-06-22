@@ -23,13 +23,32 @@ def add_header(r):
     r.headers['Cache-Control'] = 'public, max-age=0'
     return r
 
-@app.route('/create/<string:user_id>/<string:farm_name>')
+@app.route('/createfarm/<string:user_id>/<string:farm_name>')
 def create_farm(user_id,farm_name):  
     cur = mysql.connection.cursor() 
     cur.execute("INSERT INTO farm (user_id,farm_name) VALUES (%s, %s)", [user_id,farm_name])
     mysql.connection.commit()
     cur.close() 
     return "Created!"
+
+@app.route('/delfarm/<string:farm_id>')
+def delete_farm(farm_id):  
+    cur = mysql.connection.cursor() 
+    cur.execute("DELETE FROM farm WHERE farm_id = %s ", [farm_id])
+    mysql.connection.commit()
+    cur.close() 
+    return "Deleted!"
+
+@app.route('/alluser')
+def alluser():  
+    cur = mysql.connection.cursor() 
+    cur.execute("SELECT username,user_id FROM users")
+    raw_data = cur.fetchall()
+    cur.close()
+    data = []
+    for cur in raw_data:
+        data.append({"username":cur[0],"user_id":cur[1]})
+    return jsonify(data)
 
 @app.route('/register/<string:username>/<string:password>') #register
 def register(username,password,):
@@ -47,12 +66,58 @@ def register(username,password,):
         cur.close()
         return "Username already exists"
 
+@app.route('/admin/<string:username>/<string:password>') 
+def admin(username,password,):
+    password = bcrypt.generate_password_hash(password)
+    cur = mysql.connection.cursor() 
+    cur.execute(""" SELECT username FROM admin WHERE username = %s """, [username])
+    users_name = cur.fetchall()
+    if len(users_name) < 1:
+        cur.execute("""INSERT INTO admin (username,password) VALUES (%s, %s)""", [username, password])
+        mysql.connection.commit()
+        cur.close()
+        return "Registered"
+    else :
+        mysql.connection.commit()
+        cur.close()
+        return "admin already exists"
+
+@app.route('/deluser/<string:user_id>')
+def delete_user(user_id):  
+    cur = mysql.connection.cursor() 
+    cur.execute("DELETE FROM users WHERE user_id = %s ", [user_id])
+    mysql.connection.commit()
+    cur.close() 
+    return "Deleted!"
+
 @app.route('/login/<string:username>/<string:password>') #login
 def login(username,password,):
     check_password = None
     user_data = []
     cur = mysql.connection.cursor() 
     cur.execute(""" SELECT user_id,username,password FROM users WHERE username = %s  """, [username] )
+    data = cur.fetchall()
+    if data :
+        encPassword = data[0][2]
+        check_password = bcrypt.check_password_hash(encPassword, password)
+        if check_password == True :  
+            data = data[0][0] , data[0][1]
+            user_data.append({"user_id":data[0],"username":data[1],"status":200})
+        else:
+            user_data.append({"status":404})
+    else :
+        user_data.append({"status":404})
+        pass
+    mysql.connection.commit()
+    cur.close() 
+    return jsonify(user_data)
+
+@app.route('/adminlogin/<string:username>/<string:password>') #login
+def adminlogin(username,password,):
+    check_password = None
+    user_data = []
+    cur = mysql.connection.cursor() 
+    cur.execute(""" SELECT username,password FROM admin WHERE username = %s  """, [username] )
     data = cur.fetchall()
     if data :
         encPassword = data[0][2]
@@ -110,7 +175,7 @@ def get_all_farm(user_id):
         ,"fog_status":cur[7],"Automate":cur[8],"fix_temp":cur[9],"fix_humid":cur[10]})
     return jsonify(data)
 
-@app.route('/read/farm/<string:farm_id>') #?????????????????????????
+@app.route('/read/farm/<string:farm_id>') 
 def get_one_farm(farm_id):
     data = []
     cur = mysql.connection.cursor()
@@ -122,7 +187,7 @@ def get_one_farm(farm_id):
         ,"fog_status":cur[7],"Automate":cur[8],"fix_temp":cur[9],"fix_humid":cur[10]})
     return jsonify(data)
 
-@app.route('/change-option/<string:farm_id>/<string:Automate>/<string:fix_temp>/<string:fix_humid>/<string:fan_status>/<string:fog_status>') #????????????????? from Mobile
+@app.route('/change-option/<string:farm_id>/<string:Automate>/<string:fix_temp>/<string:fix_humid>/<string:fan_status>/<string:fog_status>')
 def change_option(farm_id,Automate,fix_temp,fix_humid,fan_status,fog_status):
     cur = mysql.connection.cursor()
     cur.execute(""" UPDATE farm SET Automate=%s,fix_temp = %s,fix_humid = %s,fan_status = %s,fog_status = %s WHERE farm_id = %s """, (Automate,fix_temp,fix_humid,fan_status,fog_status, farm_id) )
