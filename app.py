@@ -272,8 +272,6 @@ def statistic_farm(farm_id,time):
         data.append({"id":cur[0],"farm_id":cur[1],"temp":cur[2],"humid":cur[3],"time":time})
     return jsonify(data)
 
-@app.route('/test') 
-def test():
     cur = mysql.connection.cursor()
     cur.execute(""" SELECT testtest FROM test ORDER BY testtest DESC LIMIT 1""")
     data = cur.fetchall()
